@@ -1,0 +1,11 @@
+data/
+outputs/
+*.pt
+*.csv
+*.png
+*.zip
+__MACOSX/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
