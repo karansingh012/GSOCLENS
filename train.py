@@ -41,27 +41,28 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def build_train_transforms() -> transforms.Compose:
-    return transforms.Compose(
-        [
-            transforms.Resize((224, 224), antialias=True),
+def build_train_transforms():
+    return transforms.Compose([
+        transforms.Resize((224, 224), antialias=True),
 
-            # Existing augmentation
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomVerticalFlip(p=0.5),
-            #Reduced rotation
-            transforms.RandomRotation(degrees=10),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomVerticalFlip(p=0.5),
+        transforms.RandomRotation(degrees=10),
 
-            # DOMAIN ADAPTATION (NEW ADD)
-            transforms.ColorJitter(brightness=0.2, contrast=0.2),
+        transforms.ColorJitter(
+            brightness=0.1,
+            contrast=0.1
+        ),
 
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406],
-                std=[0.229, 0.224, 0.225],
-            ),
-        ]
-    )
+        # # transforms.Lambda(
+        # #     lambda x: torch.clamp(x + 0.005 * torch.randn_like(x), 0.0, 1.0)
+        # ),
 
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        )
+    ])
 
 def build_eval_transforms() -> transforms.Compose:
     return transforms.Compose(
@@ -92,9 +93,14 @@ def split_train_validation(samples: List[Sample], val_split: float, seed: int) -
     return train_samples, val_samples
 
 
-def build_dataloaders(args: argparse.Namespace) -> Tuple[DataLoader, DataLoader, DataLoader, torch.Tensor]:
+from torch.utils.data import WeightedRandomSampler
+
+def build_dataloaders(args: argparse.Namespace):
+
     train_samples, test_samples = build_train_test_samples(args.data_root)
-    train_samples, val_samples = split_train_validation(train_samples, args.val_split, args.seed)
+    train_samples, val_samples = split_train_validation(
+        train_samples, args.val_split, args.seed
+    )
 
     train_transform = build_train_transforms()
     eval_transform = build_eval_transforms()
@@ -103,30 +109,44 @@ def build_dataloaders(args: argparse.Namespace) -> Tuple[DataLoader, DataLoader,
     val_dataset = LensDataset(val_samples, transform=eval_transform)
     test_dataset = LensDataset(test_samples, transform=eval_transform)
 
-    train_labels = torch.tensor([s.label for s in train_samples], dtype=torch.long)
+    # 🔥 CLASS IMBALANCE FIX
+    train_labels = torch.tensor([s.label for s in train_samples])
     class_counts = torch.bincount(train_labels, minlength=2)
+
+    # 🔥 sampler ke liye (balanced sampling)
+    weights = 1.0 / class_counts.float()
+    sample_weights = weights[train_labels]
+
+    sampler = WeightedRandomSampler(
+        sample_weights,
+        num_samples=len(sample_weights),
+        replacement=True,
+    )
     class_weights = (len(train_labels) / (2.0 * class_counts.float())).float()
 
+    # 🔥 TRAIN LOADER (no shuffle now)
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
-        shuffle=True,
+        sampler=sampler,
         num_workers=args.num_workers,
-        pin_memory=torch.cuda.is_available(),
+        pin_memory=torch.cuda.is_available()
     )
+
     val_loader = DataLoader(
         val_dataset,
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=args.num_workers,
-        pin_memory=torch.cuda.is_available(),
+        pin_memory=torch.cuda.is_available()
     )
+
     test_loader = DataLoader(
         test_dataset,
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=args.num_workers,
-        pin_memory=torch.cuda.is_available(),
+        pin_memory=torch.cuda.is_available()
     )
 
     LOGGER.info(
@@ -138,15 +158,15 @@ def build_dataloaders(args: argparse.Namespace) -> Tuple[DataLoader, DataLoader,
     )
 
     return train_loader, val_loader, test_loader, class_weights
-
-
+    
+    
 def train_one_epoch(
-    model: nn.Module,
-    loader: DataLoader,
-    optimizer: torch.optim.Optimizer,
-    criterion: nn.Module,
-    device: torch.device,
-) -> float:
+    model,
+    loader,
+    optimizer,
+    criterion,
+    device,
+):
     model.train()
     running_loss = 0.0
 
@@ -157,13 +177,13 @@ def train_one_epoch(
         optimizer.zero_grad(set_to_none=True)
         logits = model(images)
         loss = criterion(logits, labels)
+
         loss.backward()
         optimizer.step()
 
         running_loss += loss.item() * images.size(0)
 
     return running_loss / len(loader.dataset)
-
 
 @torch.no_grad()
 def evaluate(
@@ -172,6 +192,7 @@ def evaluate(
     device: torch.device,
     criterion: nn.Module,
 ) -> Dict[str, np.ndarray | float]:
+
     model.eval()
     all_labels = []
     all_scores = []
@@ -180,6 +201,7 @@ def evaluate(
     for images, labels in loader:
         images = images.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
+
         logits = model(images)
         loss = criterion(logits, labels)
         probs = torch.softmax(logits, dim=1)[:, 1]
@@ -200,11 +222,21 @@ def evaluate(
         "tpr": np.array([]),
     }
 
-    if len(np.unique(y_true)) > 1:
-        results["auc"] = float(roc_auc_score(y_true, y_score))
-        fpr, tpr, _ = roc_curve(y_true, y_score)
-        results["fpr"] = fpr
-        results["tpr"] = tpr
+    # CORRECTLY INSIDE FUNCTION
+    try:
+        if len(np.unique(y_true)) > 1:
+            results["auc"] = float(roc_auc_score(y_true, y_score))
+            fpr, tpr, _ = roc_curve(y_true, y_score)
+            results["fpr"] = fpr
+            results["tpr"] = tpr
+        else:
+            results["auc"] = float("nan")
+            results["fpr"] = np.array([])
+            results["tpr"] = np.array([])
+    except Exception:
+        results["auc"] = float("nan")
+        results["fpr"] = np.array([])
+        results["tpr"] = np.array([])
 
     return results
 
@@ -237,7 +269,15 @@ def main() -> None:
     configure_logging(args.output_dir / "training.log")
     set_seed(args.seed)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # CORRECT PLACE (inside main)
+    if torch.backends.mps.is_available():
+        device = torch.device("mps")
+        torch.set_num_threads(1)
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
     LOGGER.info("Using device: %s", device)
 
     train_loader, val_loader, test_loader, class_weights = build_dataloaders(args)
