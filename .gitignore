@@ -1,11 +1,27 @@
+# Data & outputs
 data/
 outputs/
+checkpoints/
+
+# Model weights
 *.pt
-*.csv
-*.png
-*.zip
-__MACOSX/
-.venv/
+*.pth
+
+# Logs
+*.log
+
+# Python
 __pycache__/
 *.pyc
+
+# Virtual env
+.venv/
+
+# OS files
 .DS_Store
+__MACOSX/
+
+# Optional (careful ⚠️)
+# *.csv
+# *.png
+# *.zip
