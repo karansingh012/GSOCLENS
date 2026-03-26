@@ -20,6 +20,9 @@ from src.model import build_resnet18_binary
 from src.utils import configure_logging, set_seed
 
 
+from src.model import build_feature_extractor, build_classifier, DomainCritic#
+
+
 import logging
 
 
@@ -38,6 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--val-split", type=float, default=0.2, help="Fraction of training set used for validation")
     parser.add_argument("--no-pretrained", action="store_true", help="Disable ImageNet pretrained weights")
     parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
+    parser.add_argument("--use-wdgrl", action="store_true", help="Enable WDGRL domain adaptation")#
     return parser.parse_args()
 
 
@@ -171,6 +175,56 @@ def train_one_epoch(
 
     return running_loss / len(loader.dataset)
 
+
+# ✅ WDGRL FUNCTION (SEPARATE)
+def train_one_epoch_wdgrl(
+    feature_extractor,
+    classifier,
+    critic,
+    loader,
+    optimizer,
+    criterion,
+    device,
+    lambda_wd=0.1,
+):
+
+    feature_extractor.train()
+    classifier.train()
+    critic.train()
+
+    running_loss = 0.0
+
+    for images, labels in loader:
+
+        images = images.to(device)
+        labels = labels.to(device)
+
+        features = feature_extractor(images)
+
+        logits = classifier(features)
+        cls_loss = criterion(logits, labels)
+
+        half = images.size(0) // 2
+        if half == 0:
+            continue
+
+        source_feat = features[:half]
+        target_feat = features[half:]
+
+        critic_source = critic(source_feat).mean()
+        critic_target = critic(target_feat).mean()
+
+        wd_loss = critic_source - critic_target
+
+        loss = cls_loss + lambda_wd * wd_loss
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item() * images.size(0)
+
+    return running_loss / len(loader.dataset)
 @torch.no_grad()
 def evaluate(
     model: nn.Module,
@@ -226,6 +280,58 @@ def evaluate(
 
     return results
 
+@torch.no_grad()
+def evaluate_wdgrl(
+    feature_extractor,
+    classifier,
+    loader,
+    device,
+    criterion,
+):
+
+    feature_extractor.eval()
+    classifier.eval()
+
+    all_labels = []
+    all_scores = []
+    running_loss = 0.0
+
+    for images, labels in loader:
+
+        images = images.to(device)
+        labels = labels.to(device)
+
+        features = feature_extractor(images)
+        logits = classifier(features)
+
+        loss = criterion(logits, labels)
+        probs = torch.softmax(logits, dim=1)[:, 1]
+
+        running_loss += loss.item() * images.size(0)
+
+        all_labels.append(labels.cpu().numpy())
+        all_scores.append(probs.cpu().numpy())
+
+    y_true = np.concatenate(all_labels)
+    y_score = np.concatenate(all_scores)
+
+    results = {
+        "loss": running_loss / len(loader.dataset),
+        "auc": float("nan"),
+        "fpr": np.array([]),
+        "tpr": np.array([]),
+    }
+
+    try:
+        if len(np.unique(y_true)) > 1:
+            results["auc"] = float(roc_auc_score(y_true, y_score))
+            fpr, tpr, _ = roc_curve(y_true, y_score)
+            results["fpr"] = fpr
+            results["tpr"] = tpr
+    except:
+        pass
+
+    return results
 
 def plot_roc(fpr: np.ndarray, tpr: np.ndarray, auc: float, output_path: Path) -> None:
     plt.figure(figsize=(6, 6))
@@ -255,7 +361,6 @@ def main() -> None:
     configure_logging(args.output_dir / "training.log")
     set_seed(args.seed)
 
-    # CORRECT PLACE (inside main)
     if torch.backends.mps.is_available():
         device = torch.device("mps")
         torch.set_num_threads(1)
@@ -268,51 +373,89 @@ def main() -> None:
 
     train_loader, val_loader, test_loader = build_dataloaders(args)
 
-    model = build_resnet18_binary(pretrained=not args.no_pretrained).to(device)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    if args.use_wdgrl:
+        feature_extractor = build_feature_extractor().to(device)
+        classifier = build_classifier().to(device)
+        critic = DomainCritic().to(device)
 
+        params = list(feature_extractor.parameters()) + list(classifier.parameters())
+        optimizer = Adam(params, lr=args.lr, weight_decay=args.weight_decay)
+
+    else:
+        model = build_resnet18_binary(pretrained=not args.no_pretrained).to(device)
+        optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+
+    criterion = nn.CrossEntropyLoss()
     history: List[Dict[str, float]] = []
 
     for epoch in range(1, args.epochs + 1):
-        train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
-        val_results = evaluate(model, val_loader, device, criterion)
+
+        if args.use_wdgrl:
+            train_loss = train_one_epoch_wdgrl(
+                feature_extractor, classifier, critic,
+                train_loader, optimizer, criterion, device
+            )
+            val_results = evaluate_wdgrl(
+                feature_extractor, classifier,
+                val_loader, device, criterion
+            )
+        else:
+            train_loss = train_one_epoch(
+                model, train_loader, optimizer, criterion, device
+            )
+            val_results = evaluate(
+                model, val_loader, device, criterion
+            )
+
         val_loss = float(val_results["loss"])
         val_auc = float(val_results["auc"])
 
-        history.append(
-            {
-                "epoch": float(epoch),
-                "train_loss": train_loss,
-                "val_loss": val_loss,
-                "val_auc": val_auc,
-            }
-        )
+        history.append({
+            "epoch": float(epoch),
+            "train_loss": train_loss,
+            "val_loss": val_loss,
+            "val_auc": val_auc,
+        })
+
         LOGGER.info(
             "Epoch %02d/%02d | train_loss=%.6f | val_loss=%.6f | val_auc=%.6f",
-            epoch,
-            args.epochs,
-            train_loss,
-            val_loss,
-            val_auc,
+            epoch, args.epochs, train_loss, val_loss, val_auc
         )
 
-    eval_results = evaluate(model, test_loader, device, criterion)
+    # ✅ TEST
+    if args.use_wdgrl:
+        eval_results = evaluate_wdgrl(
+            feature_extractor, classifier,
+            test_loader, device, criterion
+        )
+    else:
+        eval_results = evaluate(model, test_loader, device, criterion)
+
     test_loss = float(eval_results["loss"])
     auc = eval_results["auc"]
+
     LOGGER.info("Test metrics | loss=%.6f | roc_auc=%.6f", test_loss, float(auc))
 
+    # ✅ SAVE
     history_path = args.output_dir / "history.csv"
     save_history_csv(history, history_path)
+
     model_path = args.output_dir / "resnet18_lens.pt"
-    torch.save(model.state_dict(), model_path)
+
+    if args.use_wdgrl:
+        torch.save({
+            "feature_extractor": feature_extractor.state_dict(),
+            "classifier": classifier.state_dict()
+        }, model_path)
+    else:
+        torch.save(model.state_dict(), model_path)
 
     fpr = eval_results["fpr"]
     tpr = eval_results["tpr"]
-    if len(fpr) > 0 and len(tpr) > 0:
+
+    if len(fpr) > 0:
         roc_path = args.output_dir / "roc_curve.png"
         plot_roc(fpr, tpr, float(auc), roc_path)
-        LOGGER.info("Saved ROC curve to: %s", roc_path)
 
     LOGGER.info("Saved history to: %s", history_path)
     LOGGER.info("Saved model weights to: %s", model_path)
