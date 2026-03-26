@@ -1,27 +1,54 @@
-# Data & outputs
+# =========================
+# Data & Outputs
+# =========================
 data/
 outputs/
 checkpoints/
 
-# Model weights
+# But allow important result visuals (optional)
+!outputs/figures/
+!outputs/figures/*.png
+
+# =========================
+# Model Weights
+# =========================
 *.pt
 *.pth
 
+# =========================
 # Logs
+# =========================
 *.log
 
+# =========================
 # Python
+# =========================
 __pycache__/
 *.pyc
+*.pyo
 
-# Virtual env
+# =========================
+# Virtual Environment
+# =========================
 .venv/
+env/
+venv/
 
-# OS files
+# =========================
+# OS / System Files
+# =========================
 .DS_Store
 __MACOSX/
+Thumbs.db
 
-# Optional (careful ⚠️)
+# =========================
+# Jupyter (if used later)
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# Optional (keep commented)
+# =========================
 # *.csv
 # *.png
 # *.zip
