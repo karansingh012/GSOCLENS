@@ -42,6 +42,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-pretrained", action="store_true", help="Disable ImageNet pretrained weights")
     parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
     parser.add_argument("--use-wdgrl", action="store_true", help="Enable WDGRL domain adaptation")#
+    parser.add_argument("--lambda-wd", type=float, default=0.1)
     return parser.parse_args()
 
 
@@ -185,7 +186,7 @@ def train_one_epoch_wdgrl(
     optimizer,
     criterion,
     device,
-    lambda_wd=0.1,
+    lambda_wd,
 ):
 
     feature_extractor.train()
@@ -393,7 +394,8 @@ def main() -> None:
         if args.use_wdgrl:
             train_loss = train_one_epoch_wdgrl(
                 feature_extractor, classifier, critic,
-                train_loader, optimizer, criterion, device
+                train_loader, optimizer, criterion, device,
+                lambda_wd=args.lambda_wd
             )
             val_results = evaluate_wdgrl(
                 feature_extractor, classifier,
@@ -440,7 +442,10 @@ def main() -> None:
     history_path = args.output_dir / "history.csv"
     save_history_csv(history, history_path)
 
-    model_path = args.output_dir / "resnet18_lens.pt"
+    if args.use_wdgrl:
+        model_path = args.output_dir / f"model_wd{args.lambda_wd}.pt"
+    else:
+        model_path = args.output_dir / "model_baseline.pt"
 
     if args.use_wdgrl:
         torch.save({
@@ -454,7 +459,10 @@ def main() -> None:
     tpr = eval_results["tpr"]
 
     if len(fpr) > 0:
-        roc_path = args.output_dir / "roc_curve.png"
+        if args.use_wdgrl:
+           roc_path = args.output_dir / f"roc_curve_wd{args.lambda_wd}.png"
+        else:
+           roc_path = args.output_dir / "roc_curve_baseline.png"
         plot_roc(fpr, tpr, float(auc), roc_path)
 
     LOGGER.info("Saved history to: %s", history_path)
