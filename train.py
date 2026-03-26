@@ -43,25 +43,13 @@ def parse_args() -> argparse.Namespace:
 
 def build_train_transforms():
     return transforms.Compose([
-        transforms.Resize((224, 224), antialias=True),
-
+        transforms.Resize((224, 224)),
         transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomVerticalFlip(p=0.5),
-        transforms.RandomRotation(degrees=10),
-
-        transforms.ColorJitter(
-            brightness=0.1,
-            contrast=0.1
-        ),
-
-        # # transforms.Lambda(
-        # #     lambda x: torch.clamp(x + 0.005 * torch.randn_like(x), 0.0, 1.0)
-        # ),
-
+        transforms.RandomRotation(degrees=10),  # reduce rotation
         transforms.Normalize(
             mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
+            std=[0.229, 0.224, 0.225],
+        ),
     ])
 
 def build_eval_transforms() -> transforms.Compose:
@@ -122,7 +110,7 @@ def build_dataloaders(args: argparse.Namespace):
         num_samples=len(sample_weights),
         replacement=True,
     )
-    class_weights = (len(train_labels) / (2.0 * class_counts.float())).float()
+    
 
     # 🔥 TRAIN LOADER (no shuffle now)
     train_loader = DataLoader(
@@ -157,9 +145,7 @@ def build_dataloaders(args: argparse.Namespace):
         class_counts.tolist(),
     )
 
-    return train_loader, val_loader, test_loader, class_weights
-    
-    
+    return train_loader, val_loader, test_loader
 def train_one_epoch(
     model,
     loader,
@@ -280,10 +266,10 @@ def main() -> None:
 
     LOGGER.info("Using device: %s", device)
 
-    train_loader, val_loader, test_loader, class_weights = build_dataloaders(args)
+    train_loader, val_loader, test_loader = build_dataloaders(args)
 
     model = build_resnet18_binary(pretrained=not args.no_pretrained).to(device)
-    criterion = nn.CrossEntropyLoss(weight=class_weights.to(device))
+    criterion = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     history: List[Dict[str, float]] = []

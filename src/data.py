@@ -37,19 +37,11 @@ class LensDataset(Dataset):
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, int]:
         sample = self.samples[index]
 
-        # Load image
         image = self._load_file(sample.path)
-
-        # Convert to tensor
         tensor = torch.from_numpy(image)
 
-        # Apply transforms
         if self.transform is not None:
-            tensor = self.transform(tensor)
-
-        # DOMAIN ADAPTATION (Noise Injection)
-        tensor = tensor + torch.randn_like(tensor) * 0.001
-        tensor = torch.clamp(tensor, 0.0, 1.0)
+           tensor = self.transform(tensor)
 
         return tensor, sample.label
 
