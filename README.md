@@ -26,6 +26,15 @@ The repository provides a strong supervised baseline (**ResNet18**) and a domain
 
 ---
 
+### Prediction Task
+
+The model performs binary classification on astronomical images and outputs:
+
+- 1 → Gravitational Lens detected  
+- 0 → Non-Lens  
+
+For each input image, the model produces a probability score (via softmax) indicating the likelihood of the presence of a gravitational lens.
+
 ## Approach
 ### 1) Baseline Model
 - **Backbone:** ResNet18 (PyTorch)
