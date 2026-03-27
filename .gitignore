@@ -1,38 +1,25 @@
-# =========================
-# 🔥 DATA (NEVER PUSH)
-# =========================
 data/
 
-# =========================
-# 🔥 MODEL FILES (HEAVY)
-# =========================
+
 *.pt
 *.pth
 *.ckpt
 
-# =========================
-# 🔥 PYTHON CACHE
-# =========================
+
 __pycache__/
 *.pyc
 *.pyo
 
-# =========================
-# 🔥 VIRTUAL ENV
-# =========================
+
 .venv/
 env/
 venv/
 
-# =========================
-# 🔥 SYSTEM FILES
-# =========================
+
 .DS_Store
 Thumbs.db
 
-# =========================
-# 🔥 OPTIONAL (UNCOMMENT IF NEEDED)
-# =========================
-# outputs/              ← agar full outputs nahi push karna
+
+# outputs/            
 # outputs_baseline/
 # outputs_wdgrl/
