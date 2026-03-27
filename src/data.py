@@ -23,8 +23,11 @@ class LensDataset(Dataset):
     """
     Dataset for gravitational lens binary classification.
 
-    Supports loading from NumPy files (.npy/.npz) and image formats.
-    Output tensors: (C, H, W) float32
+    Supports:
+    - NumPy files (.npy / .npz)
+    - Image files (.png, .jpg, etc.)
+
+    Output: torch.Tensor (C, H, W)
     """
 
     def __init__(self, samples: Sequence[Sample], transform=None) -> None:
@@ -37,13 +40,15 @@ class LensDataset(Dataset):
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, int]:
         sample = self.samples[index]
 
-        image = self._load_file(sample.path)
-        tensor = torch.from_numpy(image)
+        image = self._load_file(sample.path)  # numpy (H, W, C)
+
+        # 👉 convert to PIL for torchvision transforms
+        image = Image.fromarray(image)
 
         if self.transform is not None:
-           tensor = self.transform(tensor)
+            image = self.transform(image)  # returns tensor
 
-        return tensor, sample.label
+        return image, sample.label
 
     @staticmethod
     def _load_file(path: Path) -> np.ndarray:
@@ -54,37 +59,43 @@ class LensDataset(Dataset):
 
         elif suffix == ".npz":
             data = np.load(path)
-            first_key = data.files[0]
-            arr = data[first_key]
+            arr = data[data.files[0]]
 
         else:
             arr = np.asarray(Image.open(path).convert("RGB"))
 
-        arr = _to_chw_float32(arr)
+        arr = _to_hwc_uint8(arr)
         return arr
 
 
-def _to_chw_float32(arr: np.ndarray) -> np.ndarray:
+def _to_hwc_uint8(arr: np.ndarray) -> np.ndarray:
+    """
+    Convert input to HWC uint8 format for PIL compatibility
+    """
+
     if arr.ndim == 2:
-        arr = np.expand_dims(arr, axis=0)
+        arr = np.stack([arr] * 3, axis=-1)
 
     elif arr.ndim == 3:
         if arr.shape[0] == 3:
-            # already CHW
-            pass
+            # CHW → HWC
+            arr = np.transpose(arr, (1, 2, 0))
         elif arr.shape[-1] == 3:
-            # convert HWC → CHW
-            arr = np.transpose(arr, (2, 0, 1))
+            pass
         else:
             raise ValueError(f"Unsupported shape: {arr.shape}")
 
     else:
         raise ValueError(f"Unsupported image shape: {arr.shape}")
 
-    arr = arr.astype(np.float32)
+    # normalize if needed
+    if arr.dtype != np.uint8:
+        arr = arr.astype(np.float32)
 
-    if arr.max() > 1.0:
-        arr = arr / 255.0
+        if arr.max() <= 1.0:
+            arr = arr * 255.0
+
+        arr = arr.clip(0, 255).astype(np.uint8)
 
     return arr
 

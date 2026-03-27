@@ -1,0 +1,20 @@
+2026-03-27 21:53:16 | INFO | lens_train | Using device: cuda
+2026-03-27 21:53:18 | INFO | lens_train | Samples | train=24324 val=6081 test=19650 | class_counts(train)=[22940, 1384]
+2026-03-27 21:56:43 | INFO | lens_train | Epoch 01/15 | train_loss=0.159625 | val_loss=0.174067 | val_auc=0.989154
+2026-03-27 22:00:19 | INFO | lens_train | Epoch 02/15 | train_loss=0.089068 | val_loss=0.092239 | val_auc=0.987935
+2026-03-27 22:04:05 | INFO | lens_train | Epoch 03/15 | train_loss=0.064105 | val_loss=0.107801 | val_auc=0.991951
+2026-03-27 22:07:34 | INFO | lens_train | Epoch 04/15 | train_loss=0.054607 | val_loss=0.117224 | val_auc=0.989356
+2026-03-27 22:11:04 | INFO | lens_train | Epoch 05/15 | train_loss=0.044203 | val_loss=0.070575 | val_auc=0.986506
+2026-03-27 22:14:33 | INFO | lens_train | Epoch 06/15 | train_loss=0.035294 | val_loss=0.086240 | val_auc=0.990334
+2026-03-27 22:18:02 | INFO | lens_train | Epoch 07/15 | train_loss=0.034923 | val_loss=0.074707 | val_auc=0.989110
+2026-03-27 22:21:31 | INFO | lens_train | Epoch 08/15 | train_loss=0.031052 | val_loss=0.080398 | val_auc=0.989689
+2026-03-27 22:25:00 | INFO | lens_train | Epoch 09/15 | train_loss=0.027354 | val_loss=0.089286 | val_auc=0.981742
+2026-03-27 22:28:28 | INFO | lens_train | Epoch 10/15 | train_loss=0.026540 | val_loss=0.062765 | val_auc=0.993008
+2026-03-27 22:31:56 | INFO | lens_train | Epoch 11/15 | train_loss=0.022576 | val_loss=0.079748 | val_auc=0.990728
+2026-03-27 22:35:23 | INFO | lens_train | Epoch 12/15 | train_loss=0.022255 | val_loss=0.093753 | val_auc=0.988930
+2026-03-27 22:38:50 | INFO | lens_train | Epoch 13/15 | train_loss=0.020567 | val_loss=0.069602 | val_auc=0.993008
+2026-03-27 22:42:17 | INFO | lens_train | Epoch 14/15 | train_loss=0.019590 | val_loss=0.070042 | val_auc=0.989011
+2026-03-27 22:45:44 | INFO | lens_train | Epoch 15/15 | train_loss=0.019899 | val_loss=0.072772 | val_auc=0.989141
+2026-03-27 22:46:52 | INFO | lens_train | Test metrics | loss=0.043579 | roc_auc=0.980443
+2026-03-27 22:46:53 | INFO | lens_train | Saved history to: outputs_wdgrl\history.csv
+2026-03-27 22:46:53 | INFO | lens_train | Saved model weights to: outputs_wdgrl\model_wd0.1.pt

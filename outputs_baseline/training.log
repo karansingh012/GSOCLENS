@@ -1,0 +1,35 @@
+2026-03-27 20:03:43 | INFO | lens_train | Using device: cuda
+2026-03-27 20:03:45 | INFO | lens_train | Samples | train=24324 val=6081 test=19650 | class_counts(train)=[22940, 1384]
+2026-03-27 20:04:12 | INFO | lens_train | Using device: cuda
+2026-03-27 20:04:13 | INFO | lens_train | Samples | train=24324 val=6081 test=19650 | class_counts(train)=[22940, 1384]
+2026-03-27 20:07:34 | INFO | lens_train | Epoch 01/15 | train_loss=0.159658 | val_loss=0.199879 | val_auc=0.978215
+2026-03-27 20:10:57 | INFO | lens_train | Epoch 02/15 | train_loss=0.086383 | val_loss=0.117990 | val_auc=0.990354
+2026-03-27 20:14:21 | INFO | lens_train | Epoch 03/15 | train_loss=0.061218 | val_loss=0.068490 | val_auc=0.986864
+2026-03-27 20:17:45 | INFO | lens_train | Epoch 04/15 | train_loss=0.046504 | val_loss=0.080252 | val_auc=0.988662
+2026-03-27 20:21:10 | INFO | lens_train | Epoch 05/15 | train_loss=0.047605 | val_loss=0.082675 | val_auc=0.989407
+2026-03-27 20:24:35 | INFO | lens_train | Epoch 06/15 | train_loss=0.034793 | val_loss=0.078249 | val_auc=0.982690
+2026-03-27 20:28:00 | INFO | lens_train | Epoch 07/15 | train_loss=0.039264 | val_loss=0.092919 | val_auc=0.984708
+2026-03-27 20:31:25 | INFO | lens_train | Epoch 08/15 | train_loss=0.026536 | val_loss=0.130731 | val_auc=0.990289
+2026-03-27 20:34:50 | INFO | lens_train | Epoch 09/15 | train_loss=0.026493 | val_loss=0.079434 | val_auc=0.989174
+2026-03-27 20:38:14 | INFO | lens_train | Epoch 10/15 | train_loss=0.023704 | val_loss=0.079401 | val_auc=0.990510
+2026-03-27 20:41:42 | INFO | lens_train | Epoch 11/15 | train_loss=0.032742 | val_loss=0.082019 | val_auc=0.989012
+2026-03-27 20:45:08 | INFO | lens_train | Epoch 12/15 | train_loss=0.022779 | val_loss=0.075764 | val_auc=0.989963
+2026-03-27 20:48:34 | INFO | lens_train | Epoch 13/15 | train_loss=0.020908 | val_loss=0.073179 | val_auc=0.988636
+2026-03-27 20:52:34 | INFO | lens_train | Epoch 14/15 | train_loss=0.020998 | val_loss=0.063042 | val_auc=0.988642
+2026-03-27 20:56:00 | INFO | lens_train | Epoch 15/15 | train_loss=0.016519 | val_loss=0.094957 | val_auc=0.989173
+2026-03-27 20:57:07 | INFO | lens_train | Test metrics | loss=0.073688 | roc_auc=0.983929
+2026-03-27 20:57:07 | INFO | lens_train | Saved history to: outputs_baseline\history.csv
+2026-03-27 20:57:07 | INFO | lens_train | Saved model weights to: outputs_baseline\model_baseline.pt
+2026-03-27 21:04:50 | INFO | lens_train | Using device: cuda
+2026-03-27 21:04:51 | INFO | lens_train | Samples | train=24324 val=6081 test=19650 | class_counts(train)=[22940, 1384]
+2026-03-27 21:08:10 | INFO | lens_train | Epoch 01/15 | train_loss=0.159861 | val_loss=0.212328 | val_auc=0.979996
+2026-03-27 21:11:35 | INFO | lens_train | Epoch 02/15 | train_loss=0.084434 | val_loss=0.106461 | val_auc=0.987329
+2026-03-27 21:15:03 | INFO | lens_train | Epoch 03/15 | train_loss=0.060625 | val_loss=0.077832 | val_auc=0.988414
+2026-03-27 21:18:31 | INFO | lens_train | Epoch 04/15 | train_loss=0.044924 | val_loss=0.083629 | val_auc=0.986910
+2026-03-27 21:22:08 | INFO | lens_train | Epoch 05/15 | train_loss=0.041669 | val_loss=0.072501 | val_auc=0.989950
+2026-03-27 21:25:37 | INFO | lens_train | Epoch 06/15 | train_loss=0.034042 | val_loss=0.061880 | val_auc=0.988138
+2026-03-27 21:29:06 | INFO | lens_train | Epoch 07/15 | train_loss=0.035093 | val_loss=0.085784 | val_auc=0.989154
+2026-03-27 21:32:35 | INFO | lens_train | Epoch 08/15 | train_loss=0.024825 | val_loss=0.071777 | val_auc=0.989242
+2026-03-27 21:36:04 | INFO | lens_train | Epoch 09/15 | train_loss=0.025787 | val_loss=0.065839 | val_auc=0.989308
+2026-03-27 21:39:47 | INFO | lens_train | Epoch 10/15 | train_loss=0.021397 | val_loss=0.082419 | val_auc=0.988328
+2026-03-27 21:43:27 | INFO | lens_train | Epoch 11/15 | train_loss=0.036337 | val_loss=0.066015 | val_auc=0.987979

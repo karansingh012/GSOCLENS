@@ -19,15 +19,20 @@ def build_resnet18_binary(pretrained: bool = True) -> nn.Module:
 
 
 # -------------------------------
-# 2. FEATURE EXTRACTOR (WDGRL)
+# 2. FEATURE EXTRACTOR (WDGRL / ADDA)
 # -------------------------------
 def build_feature_extractor(pretrained: bool = True) -> nn.Module:
     weights = ResNet18_Weights.DEFAULT if pretrained else None
     model = resnet18(weights=weights)
 
     # Remove final FC layer
-    layers = list(model.children())[:-1]  # remove classifier
-    feature_extractor = nn.Sequential(*layers)
+    layers = list(model.children())[:-1]
+
+    # 🔥 Add flatten here (important)
+    feature_extractor = nn.Sequential(
+        *layers,
+        nn.Flatten()
+    )
 
     return feature_extractor
 
@@ -37,7 +42,6 @@ def build_feature_extractor(pretrained: bool = True) -> nn.Module:
 # -------------------------------
 def build_classifier() -> nn.Module:
     return nn.Sequential(
-        nn.Flatten(),
         nn.Linear(512, 128),
         nn.ReLU(),
         nn.Dropout(0.3),
@@ -46,7 +50,7 @@ def build_classifier() -> nn.Module:
 
 
 # -------------------------------
-# 4. DOMAIN CRITIC (WDGRL CORE)
+# 4. DOMAIN CRITIC (WDGRL / ADDA)
 # -------------------------------
 class DomainCritic(nn.Module):
     def __init__(self):
@@ -55,9 +59,10 @@ class DomainCritic(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Linear(256, 1),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, 1),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = x.view(x.size(0), -1)  # flatten (B, 512, 1, 1) → (B, 512)
         return self.net(x)

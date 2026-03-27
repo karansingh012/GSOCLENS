@@ -1,54 +1,38 @@
 # =========================
-# Data & Outputs
+# 🔥 DATA (NEVER PUSH)
 # =========================
 data/
-outputs/
-checkpoints/
-
-# But allow important result visuals (optional)
-!outputs/figures/
-!outputs/figures/*.png
 
 # =========================
-# Model Weights
+# 🔥 MODEL FILES (HEAVY)
 # =========================
 *.pt
 *.pth
+*.ckpt
 
 # =========================
-# Logs
-# =========================
-*.log
-
-# =========================
-# Python
+# 🔥 PYTHON CACHE
 # =========================
 __pycache__/
 *.pyc
 *.pyo
 
 # =========================
-# Virtual Environment
+# 🔥 VIRTUAL ENV
 # =========================
 .venv/
 env/
 venv/
 
 # =========================
-# OS / System Files
+# 🔥 SYSTEM FILES
 # =========================
 .DS_Store
-__MACOSX/
 Thumbs.db
 
 # =========================
-# Jupyter (if used later)
+# 🔥 OPTIONAL (UNCOMMENT IF NEEDED)
 # =========================
-.ipynb_checkpoints/
-
-# =========================
-# Optional (keep commented)
-# =========================
-# *.csv
-# *.png
-# *.zip
+# outputs/              ← agar full outputs nahi push karna
+# outputs_baseline/
+# outputs_wdgrl/
